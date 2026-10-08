@@ -52,12 +52,13 @@ svg{display:block}
     <button data-add="proc"><svg width="28" height="18" viewBox="0 0 28 18"><rect x="1" y="2" width="26" height="14" rx="2" fill="#fff" stroke="#1E2A38" stroke-width="1.5"/></svg>İşlem</button>
     <button data-add="dec"><svg width="28" height="18" viewBox="0 0 28 18"><polygon points="14,1 27,9 14,17 1,9" fill="#F6D77A" stroke="#1E2A38" stroke-width="1.5"/></svg>Karar</button>
     <button data-add="io"><svg width="28" height="18" viewBox="0 0 28 18"><polygon points="6,2 27,2 22,16 1,16" fill="#C9C4F0" stroke="#1E2A38" stroke-width="1.5"/></svg>Giriş / Çıkış</button>
+    <button data-add="txt"><svg width="28" height="18" viewBox="0 0 28 18"><text x="14" y="15" text-anchor="middle" font-size="16" font-weight="700" font-family="Arial,sans-serif" style="fill:var(--ink)">T</text></svg>Metin</button>
     <hr>
     <button id="bDel">Seçileni sil</button>
     <button id="bClr">Hepsini temizle</button>
     <hr>
     <p>Bir şekil seçiliyken yeni şekil eklersen otomatik bağlanır.</p>
-    <p>Çift tıkla: yazıyı değiştir. Mavi noktayı başka şekle sürükle: bağlantı kur.</p>
+    <p>Metin: şekilsiz, serbest yazı ekler (not, açıklama). Çift tıkla: yazıyı değiştir. Mavi noktayı başka şekle sürükle: bağlantı kur.</p>
   </nav>
   <div class="box">
     <div class="wrap" id="wrap">
@@ -85,7 +86,8 @@ const T={
   start:{w:150,h:56,fill:'#9ED8CF',text:'Başla'},
   proc:{w:164,h:64,fill:'#FFFFFF',text:'İşlem'},
   dec:{w:184,h:100,fill:'#F6D77A',text:'Koşul?'},
-  io:{w:176,h:64,fill:'#C9C4F0',text:'Veri gir'}
+  io:{w:176,h:64,fill:'#C9C4F0',text:'Veri gir'},
+  txt:{w:180,h:40,fill:'none',text:'Metin'}
 };
 let S={n:[],e:[]},sel=null,uid=1,editing=null,drag=null,conn=null,last={t:0,k:'',id:0};
 let stored=null;
@@ -116,7 +118,9 @@ function geo(a,b){
 }
 function wrapT(s,m){const out=[];let c='';for(const w of s.split(/\s+/)){if(c&&(c+' '+w).length>m){out.push(c);c=w}else c=c?c+' '+w:w}if(c)out.push(c);return out.length?out:['']}
 function shape(n,g,on){
-  const{x,y,w,h}=n,a={fill:T[n.t].fill,stroke:on?ACC:INK,'stroke-width':on?3:1.8,'stroke-linejoin':'round'};
+  const{x,y,w,h}=n;
+  if(n.t==='txt')return el('rect',{x:x-w/2,y:y-h/2,width:w,height:h,rx:6,fill:'transparent',stroke:on?ACC:'none','stroke-width':2,'stroke-dasharray':'6 4'},g);
+  const a={fill:T[n.t].fill,stroke:on?ACC:INK,'stroke-width':on?3:1.8,'stroke-linejoin':'round'};
   if(n.t==='start')return el('rect',{...a,x:x-w/2,y:y-h/2,width:w,height:h,rx:h/2},g);
   if(n.t==='proc')return el('rect',{...a,x:x-w/2,y:y-h/2,width:w,height:h,rx:4},g);
   if(n.t==='dec')return el('polygon',{...a,points:`${x},${y-h/2} ${x+w/2},${y} ${x},${y+h/2} ${x-w/2},${y}`},g);
@@ -142,10 +146,10 @@ function render(){
     const on=sel&&sel.k==='n'&&sel.id===n.id;
     const g=el('g',{'data-k':'n','data-id':n.id,style:'cursor:grab;touch-action:none'},gN);
     shape(n,g,on);
-    const lines=wrapT(n.text,n.t==='dec'?12:20);
-    const tx=el('text',{'text-anchor':'middle','font-size':14,'font-weight':600,fill:INK,style:'pointer-events:none'},g);
+    const lines=wrapT(n.text,n.t==='dec'?12:n.t==='txt'?22:20);
+    const tx=el('text',{'text-anchor':'middle','font-size':n.t==='txt'?15:14,'font-weight':600,fill:INK,style:'pointer-events:none'+(n.t==='txt'?';fill:var(--edge)':'')},g);
     lines.forEach((l,i)=>{const s=el('tspan',{x:n.x,y:n.y+(i-(lines.length-1)/2)*17+5},tx);s.textContent=l});
-    if(on){
+    if(on&&n.t!=='txt'){
       [[n.x,n.y-n.h/2],[n.x+n.w/2,n.y],[n.x,n.y+n.h/2],[n.x-n.w/2,n.y]].forEach(p=>{
         el('circle',{cx:p[0],cy:p[1],r:8,fill:ACC,stroke:'#fff','stroke-width':2,'data-k':'h','data-id':n.id,'data-ui':1,style:'cursor:crosshair;touch-action:none'},gN);
       });
@@ -226,7 +230,7 @@ ed.addEventListener('blur',commit);
 
 function add(t){
   const d=T[t];let x,y,from=null,k=0;
-  if(sel&&sel.k==='n'&&nd(sel.id)){
+  if(t!=='txt'&&sel&&sel.k==='n'&&nd(sel.id)){
     from=nd(sel.id);k=S.e.filter(e=>e.a===from.id).length;
     x=from.x+k*220;y=from.y+from.h/2+70+d.h/2;
   }else{
