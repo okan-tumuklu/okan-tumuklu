@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Akış Çizer</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--paper:#EEF2EF;--grid:#D3DCD6;--ink:#1E2A38;--bar:#FFFFFF;--line:#C9D3CC;--accent:#2F6FED;--muted:#5B6B7A;--edge:#1E2A38}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#172028;--grid:#212D37;--ink:#E6ECEF;--bar:#1D2832;--line:#2C3A46;--muted:#93A3B0;--edge:#C9D4DB}}
+:root[data-theme="dark"]{--paper:#172028;--grid:#212D37;--ink:#E6ECEF;--bar:#1D2832;--line:#2C3A46;--muted:#93A3B0;--edge:#C9D4DB}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;height:100%;display:flex;flex-direction:column;background:var(--paper);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+header{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--bar);border-bottom:1px solid var(--line);flex-wrap:wrap}
+h1{margin:0;font-size:21px;font-weight:800;letter-spacing:-.01em;margin-right:auto}
+#msg{font-size:13px;color:var(--muted)}
+button{font:inherit;font-size:14px;color:var(--ink);background:var(--bar);border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:10px;text-align:left}
+button:hover{border-color:var(--accent)}
+button:focus-visible,#ed:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.main{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.app{flex:1;min-height:0;display:flex}
+.tools{width:178px;flex:none;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--bar);border-right:1px solid var(--line);overflow-y:auto}
+.tools h2{margin:6px 0 0;font-size:13px;font-weight:600;color:var(--muted)}
+.tools hr{width:100%;border:0;border-top:1px solid var(--line);margin:6px 0}
+.tools p{margin:0;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.box{position:relative;flex:1;min-width:0}
+.wrap{position:absolute;inset:0;overflow:auto}
+.stage{position:relative;width:100%;height:100%;background:var(--paper)}
+svg{display:block}
+#ed{display:none;position:absolute;z-index:3;height:32px;font:600 16px "Bricolage Grotesque",system-ui,sans-serif;text-align:center;color:#1E2A38;background:#fff;border:2px solid var(--accent);border-radius:6px;padding:0 6px}
+@media (max-width:700px){
+ .app{flex-direction:column}
+ .tools{width:auto;flex-direction:row;overflow-x:auto;overflow-y:hidden;border-right:0;border-bottom:1px solid var(--line);padding:8px}
+ .tools h2,.tools p,.tools hr{display:none}
+ button{white-space:nowrap}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Akış Çizer</h1>
+  <span id="msg" role="status" aria-live="polite"></span>
+  <button id="bPng" class="main">PNG indir</button>
+  <button id="bSvg">SVG indir</button>
+</header>
+<div class="app">
+  <nav class="tools" aria-label="Şekiller">
+    <h2>Şekil ekle</h2>
+    <button data-add="start"><svg width="28" height="18" viewBox="0 0 28 18"><rect x="1" y="2" width="26" height="14" rx="7" fill="#9ED8CF" stroke="#1E2A38" stroke-width="1.5"/></svg>Başla / Bitir</button>
+    <button data-add="proc"><svg width="28" height="18" viewBox="0 0 28 18"><rect x="1" y="2" width="26" height="14" rx="2" fill="#fff" stroke="#1E2A38" stroke-width="1.5"/></svg>İşlem</button>
+    <button data-add="dec"><svg width="28" height="18" viewBox="0 0 28 18"><polygon points="14,1 27,9 14,17 1,9" fill="#F6D77A" stroke="#1E2A38" stroke-width="1.5"/></svg>Karar</button>
+    <button data-add="io"><svg width="28" height="18" viewBox="0 0 28 18"><polygon points="6,2 27,2 22,16 1,16" fill="#C9C4F0" stroke="#1E2A38" stroke-width="1.5"/></svg>Giriş / Çıkış</button>
+    <hr>
+    <button id="bDel">Seçileni sil</button>
+    <button id="bClr">Hepsini temizle</button>
+    <hr>
+    <p>Bir şekil seçiliyken yeni şekil eklersen otomatik bağlanır.</p>
+    <p>Çift tıkla: yazıyı değiştir. Mavi noktayı başka şekle sürükle: bağlantı kur.</p>
+  </nav>
+  <div class="box">
+    <div class="wrap" id="wrap">
+      <div class="stage" id="stage">
+        <svg id="c" font-family="Bricolage Grotesque, Arial, sans-serif">
+          <defs>
+            <pattern id="gp" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" style="stroke:var(--grid)" stroke-width="1"/></pattern>
+            <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 1L10 5L0 9z" style="fill:var(--edge)"/></marker>
+          </defs>
+          <rect data-ui="1" width="100%" height="100%" fill="url(#gp)"/>
+          <g id="gE"></g><g id="gN"></g><g id="gT"></g>
+        </svg>
+        <input id="ed" maxlength="60" aria-label="Metni düzenle">
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+const NS='http://www.w3.org/2000/svg';
+const $=id=>document.getElementById(id);
+const svg=$('c'),wrap=$('wrap'),ed=$('ed'),gE=$('gE'),gN=$('gN'),gT=$('gT');
+const INK='#1E2A38',ACC='#2F6FED';
+const T={
+  start:{w:150,h:56,fill:'#9ED8CF',text:'Başla'},
+  proc:{w:164,h:64,fill:'#FFFFFF',text:'İşlem'},
+  dec:{w:184,h:100,fill:'#F6D77A',text:'Koşul?'},
+  io:{w:176,h:64,fill:'#C9C4F0',text:'Veri gir'}
+};
+let S={n:[],e:[]},sel=null,uid=1,editing=null,drag=null,conn=null,last={t:0,k:'',id:0};
+let stored=null;
+try{stored=localStorage.getItem('akis-v1')}catch(_){}
+if(stored){try{S=JSON.parse(stored);uid=Math.max(0,...S.n.map(x=>x.id),...S.e.map(x=>x.id))+1}catch(_){S={n:[],e:[]}}}
+else{
+  const N=(t,x,y,text)=>({id:uid++,t,x,y,w:T[t].w,h:T[t].h,text});
+  const a=N('start',400,80,'Başla'),b=N('io',400,190,'Bir sayı gir'),c=N('dec',400,320,'Sayı çift mi?'),
+        d=N('proc',640,440,"Ekrana 'Çift' yaz"),e=N('proc',400,440,"Ekrana 'Tek' yaz"),f=N('start',520,590,'Bitir');
+  S.n=[a,b,c,d,e,f];
+  const E=(p,q,l)=>({id:uid++,a:p.id,b:q.id,l:l||''});
+  S.e=[E(a,b),E(b,c),E(c,d,'Evet'),E(c,e,'Hayır'),E(d,f),E(e,f)];
+}
+const nd=id=>S.n.find(n=>n.id===id);
+const snap=v=>Math.round(v/10)*10;
+function save(){try{localStorage.setItem('akis-v1',JSON.stringify(S))}catch(_){}}
+function el(t,a,p){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e}
+function say(m){const s=$('msg');s.textContent=m;clearTimeout(say.t);say.t=setTimeout(()=>s.textContent='',3500)}
+
+function geo(a,b){
+  const dx=b.x-a.x,dy=b.y-a.y;
+  if(Math.abs(dy)>=Math.abs(dx)){
+    const s=dy>=0?1:-1,x1=a.x,y1=a.y+s*a.h/2,x2=b.x,y2=b.y-s*b.h/2,m=(y1+y2)/2;
+    return{d:`M${x1} ${y1}V${m}H${x2}V${y2}`,lx:x1+(dx>=0?14:-14),ly:y1+s*18,la:dx>=0?'start':'end'};
+  }
+  const s=dx>=0?1:-1,x1=a.x+s*a.w/2,y1=a.y,x2=b.x-s*b.w/2,y2=b.y,m=(x1+x2)/2;
+  return{d:`M${x1} ${y1}H${m}V${y2}H${x2}`,lx:x1+s*24,ly:y1-8,la:'middle'};
+}
+function wrapT(s,m){const out=[];let c='';for(const w of s.split(/\s+/)){if(c&&(c+' '+w).length>m){out.push(c);c=w}else c=c?c+' '+w:w}if(c)out.push(c);return out.length?out:['']}
+function shape(n,g,on){
+  const{x,y,w,h}=n,a={fill:T[n.t].fill,stroke:on?ACC:INK,'stroke-width':on?3:1.8,'stroke-linejoin':'round'};
+  if(n.t==='start')return el('rect',{...a,x:x-w/2,y:y-h/2,width:w,height:h,rx:h/2},g);
+  if(n.t==='proc')return el('rect',{...a,x:x-w/2,y:y-h/2,width:w,height:h,rx:4},g);
+  if(n.t==='dec')return el('polygon',{...a,points:`${x},${y-h/2} ${x+w/2},${y} ${x},${y+h/2} ${x-w/2},${y}`},g);
+  const k=18;return el('polygon',{...a,points:`${x-w/2+k},${y-h/2} ${x+w/2},${y-h/2} ${x+w/2-k},${y+h/2} ${x-w/2},${y+h/2}`},g);
+}
+function fit(){
+  const mx=S.n.reduce((m,n)=>Math.max(m,n.x+n.w/2),0),my=S.n.reduce((m,n)=>Math.max(m,n.y+n.h/2),0);
+  const W=Math.max(wrap.clientWidth,mx+300),H=Math.max(wrap.clientHeight,my+300);
+  $('stage').style.width=W+'px';$('stage').style.height=H+'px';
+  svg.setAttribute('width',W);svg.setAttribute('height',H);
+}
+window.addEventListener('resize',fit);
+function render(){
+  gE.innerHTML='';gN.innerHTML='';
+  S.e.forEach(e=>{
+    const a=nd(e.a),b=nd(e.b);if(!a||!b)return;
+    const g=geo(a,b),on=sel&&sel.k==='e'&&sel.id===e.id;
+    el('path',{d:g.d,fill:'none',stroke:'transparent','stroke-width':16,'data-k':'e','data-id':e.id,style:'cursor:pointer'},gE);
+    el('path',{d:g.d,fill:'none','stroke-width':on?3:1.8,'marker-end':'url(#arr)',style:'pointer-events:none;stroke:'+(on?ACC:'var(--edge)')},gE);
+    if(e.l){const t=el('text',{x:g.lx,y:g.ly,'text-anchor':g.la,'font-size':13,'font-weight':600,style:'pointer-events:none;fill:var(--edge);paint-order:stroke;stroke:var(--paper);stroke-width:5px'},gE);t.textContent=e.l}
+  });
+  S.n.forEach(n=>{
+    const on=sel&&sel.k==='n'&&sel.id===n.id;
+    const g=el('g',{'data-k':'n','data-id':n.id,style:'cursor:grab;touch-action:none'},gN);
+    shape(n,g,on);
+    const lines=wrapT(n.text,n.t==='dec'?12:20);
+    const tx=el('text',{'text-anchor':'middle','font-size':14,'font-weight':600,fill:INK,style:'pointer-events:none'},g);
+    lines.forEach((l,i)=>{const s=el('tspan',{x:n.x,y:n.y+(i-(lines.length-1)/2)*17+5},tx);s.textContent=l});
+    if(on){
+      [[n.x,n.y-n.h/2],[n.x+n.w/2,n.y],[n.x,n.y+n.h/2],[n.x-n.w/2,n.y]].forEach(p=>{
+        el('circle',{cx:p[0],cy:p[1],r:8,fill:ACC,stroke:'#fff','stroke-width':2,'data-k':'h','data-id':n.id,'data-ui':1,style:'cursor:crosshair;touch-action:none'},gN);
+      });
+    }
+  });
+  fit();
+}
+function pt(e){const r=svg.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
+
+svg.addEventListener('mousedown',e=>e.preventDefault());
+svg.addEventListener('pointerdown',e=>{
+  if(editing)commit();
+  const t=e.target.closest('[data-k]');
+  if(!t){sel=null;render();return}
+  const k=t.dataset.k,id=+t.dataset.id,p=pt(e);
+  if(k==='h'){conn={a:id};svg.setPointerCapture(e.pointerId);return}
+  const now=Date.now();
+  if(now-last.t<350&&last.k===k&&last.id===id){last.t=0;sel={k,id};render();setTimeout(()=>edit(k,id),0);return}
+  last={t:now,k,id};
+  sel={k,id};
+  if(k==='n'){const n=nd(id);drag={id,dx:p.x-n.x,dy:p.y-n.y,moved:false};svg.setPointerCapture(e.pointerId)}
+  render();
+});
+svg.addEventListener('pointermove',e=>{
+  const p=pt(e);
+  if(drag){
+    const n=nd(drag.id);
+    n.x=Math.max(n.w/2+10,snap(p.x-drag.dx));n.y=Math.max(n.h/2+10,snap(p.y-drag.dy));
+    drag.moved=true;render();
+    const r=wrap.getBoundingClientRect();
+    if(e.clientX>r.right-50)wrap.scrollLeft+=25;else if(e.clientX<r.left+50)wrap.scrollLeft-=25;
+    if(e.clientY>r.bottom-50)wrap.scrollTop+=25;else if(e.clientY<r.top+50)wrap.scrollTop-=25;
+  }else if(conn){
+    const a=nd(conn.a);gT.innerHTML='';
+    el('line',{x1:a.x,y1:a.y,x2:p.x,y2:p.y,stroke:ACC,'stroke-width':2.5,'stroke-dasharray':'6 5','data-ui':1,style:'pointer-events:none'},gT);
+  }
+});
+function release(e){
+  if(conn){
+    gT.innerHTML='';
+    const el2=document.elementFromPoint(e.clientX,e.clientY),tg=el2&&el2.closest&&el2.closest('[data-k="n"]');
+    if(tg){
+      const b=+tg.dataset.id;
+      if(b!==conn.a&&!S.e.some(x=>x.a===conn.a&&x.b===b)){
+        const src=nd(conn.a),k=S.e.filter(x=>x.a===conn.a).length;
+        const ne={id:uid++,a:conn.a,b,l:src.t==='dec'?(['Evet','Hayır'][k]||''):''};
+        S.e.push(ne);sel={k:'e',id:ne.id};save();
+      }
+    }
+    conn=null;render();
+  }
+  if(drag){if(drag.moved)save();drag=null}
+}
+svg.addEventListener('pointerup',release);
+svg.addEventListener('pointercancel',release);
+
+function edit(k,id){
+  const o=k==='n'?nd(id):S.e.find(e=>e.id===id);if(!o)return;
+  let x,y,w;
+  if(k==='n'){x=o.x;y=o.y;w=Math.max(130,o.w-20)}
+  else{const g=geo(nd(o.a),nd(o.b));x=g.lx+(g.la==='start'?40:g.la==='end'?-40:0);y=g.ly;w=96}
+  editing={k,id};ed.value=k==='n'?o.text:o.l;
+  Object.assign(ed.style,{display:'block',left:(x-w/2)+'px',top:(y-16)+'px',width:w+'px'});
+  ed.focus();ed.select();
+}
+function commit(){
+  if(!editing)return;
+  const{k,id}=editing;editing=null;ed.style.display='none';
+  const v=ed.value.trim().slice(0,60);
+  if(k==='n'){const n=nd(id);if(n)n.text=v}else{const e=S.e.find(x=>x.id===id);if(e)e.l=v}
+  render();save();
+}
+ed.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){commit()}
+  else if(e.key==='Escape'){editing=null;ed.style.display='none';render()}
+});
+ed.addEventListener('blur',commit);
+
+function add(t){
+  const d=T[t];let x,y,from=null,k=0;
+  if(sel&&sel.k==='n'&&nd(sel.id)){
+    from=nd(sel.id);k=S.e.filter(e=>e.a===from.id).length;
+    x=from.x+k*220;y=from.y+from.h/2+70+d.h/2;
+  }else{
+    const o=(S.n.length%6)*20;
+    x=wrap.scrollLeft+wrap.clientWidth/2+o;y=wrap.scrollTop+110+o;
+  }
+  x=Math.max(d.w/2+10,snap(x));y=snap(y);
+  const n={id:uid++,t,x,y,w:d.w,h:d.h,text:d.text};S.n.push(n);
+  if(from)S.e.push({id:uid++,a:from.id,b:n.id,l:from.t==='dec'?(['Evet','Hayır'][k]||''):''});
+  sel={k:'n',id:n.id};render();save();
+  const vx=wrap.scrollLeft,vy=wrap.scrollTop;
+  if(y+d.h>vy+wrap.clientHeight||y-d.h<vy||x+d.w>vx+wrap.clientWidth)wrap.scrollTo({left:Math.max(0,x-wrap.clientWidth/2),top:Math.max(0,y-wrap.clientHeight/2),behavior:'smooth'});
+}
+document.querySelectorAll('[data-add]').forEach(b=>b.addEventListener('click',()=>add(b.dataset.add)));
+
+function del(){
+  if(!sel)return;
+  if(sel.k==='n'){S.n=S.n.filter(n=>n.id!==sel.id);S.e=S.e.filter(e=>e.a!==sel.id&&e.b!==sel.id)}
+  else S.e=S.e.filter(e=>e.id!==sel.id);
+  sel=null;render();save();
+}
+$('bDel').addEventListener('click',()=>{if(sel)del();else say('Önce silmek istediğin şekle ya da oka tıkla.')});
+document.addEventListener('keydown',e=>{
+  if(editing)return;
+  if((e.key==='Delete'||e.key==='Backspace')&&sel){e.preventDefault();del()}
+  if(e.key==='Escape'){sel=null;render()}
+});
+let clr=0;
+$('bClr').addEventListener('click',function(){
+  if(!clr){this.textContent='Emin misin? Tekrar tıkla';clr=setTimeout(()=>{clr=0;this.textContent='Hepsini temizle'},3000);return}
+  clearTimeout(clr);clr=0;this.textContent='Hepsini temizle';S={n:[],e:[]};sel=null;render();save();
+});
+
+function grab(){
+  if(!S.n.length){say('Önce birkaç şekil ekle.');return null}
+  const ps=sel;sel=null;render();
+  const c=svg.cloneNode(true);sel=ps;render();
+  c.querySelectorAll('[data-ui]').forEach(x=>x.remove());
+  const x0=Math.min(...S.n.map(n=>n.x-n.w/2))-40,y0=Math.min(...S.n.map(n=>n.y-n.h/2))-40;
+  const w=Math.max(...S.n.map(n=>n.x+n.w/2))+40-x0,h=Math.max(...S.n.map(n=>n.y+n.h/2))+40-y0;
+  c.setAttribute('viewBox',`${x0} ${y0} ${w} ${h}`);c.setAttribute('width',w);c.setAttribute('height',h);c.setAttribute('xmlns',NS);
+  const st=document.createElementNS(NS,'style');st.textContent='svg{--edge:#1E2A38;--paper:#fff}';
+  const bg=el('rect',{x:x0,y:y0,width:w,height:h,fill:'#fff'});
+  c.insertBefore(bg,c.firstChild);c.insertBefore(st,c.firstChild);
+  return{xml:new XMLSerializer().serializeToString(c),w,h};
+}
+async function out(name,data){
+  try{
+    const dl=window.claude&&await window.claude.use('downloads');
+    if(!dl){say('Bu görünümde indirme kullanılamıyor.');return}
+    await dl.save({filename:name,data});say('Kaydedildi.');
+  }catch(err){say(err&&err.code==='declined'?'İndirme iptal edildi.':'Dosya kaydedilemedi.')}
+}
+$('bSvg').addEventListener('click',()=>{const g=grab();if(g)out('algoritma.svg','<?xml version="1.0" encoding="UTF-8"?>\n'+g.xml)});
+$('bPng').addEventListener('click',()=>{
+  const g=grab();if(!g)return;
+  const img=new Image();
+  img.onload=()=>{
+    const c=document.createElement('canvas');c.width=g.w*2;c.height=g.h*2;
+    const x=c.getContext('2d');x.scale(2,2);x.drawImage(img,0,0,g.w,g.h);
+    c.toBlob(b=>b?out('algoritma.png',b):say('PNG oluşturulamadı.'),'image/png');
+  };
+  img.onerror=()=>say('PNG oluşturulamadı. SVG olarak indirmeyi dene.');
+  img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(g.xml);
+});
+render();
+})();
+</script>
+</body>
+</html>
