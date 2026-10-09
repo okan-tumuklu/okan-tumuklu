@@ -13,24 +13,37 @@
 html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
 *,*::before,*::after{box-sizing:inherit}
 body{margin:0;height:100%;display:flex;flex-direction:column;background:var(--paper);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
-header{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--bar);border-bottom:1px solid var(--line);flex-wrap:wrap}
+header{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--bar);border-bottom:1px solid var(--line);flex-wrap:wrap}
 h1{margin:0;font-size:21px;font-weight:800;letter-spacing:-.01em;margin-right:auto}
 #msg{font-size:13px;color:var(--muted)}
+.grp{display:flex;gap:4px;align-items:center}
 button{font:inherit;font-size:14px;color:var(--ink);background:var(--bar);border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:10px;text-align:left}
-button:hover{border-color:var(--accent)}
-button:focus-visible,#ed:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button:hover:not(:disabled){border-color:var(--accent)}
+button:disabled{opacity:.4;cursor:default}
+button:focus-visible,#ed:focus-visible,.bar input:focus-visible,.bar select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 button.main{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.grp button{padding:7px 10px}
+#zl{min-width:58px;justify-content:center}
 .app{flex:1;min-height:0;display:flex}
-.tools{width:178px;flex:none;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--bar);border-right:1px solid var(--line);overflow-y:auto}
+.tools{width:182px;flex:none;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--bar);border-right:1px solid var(--line);overflow-y:auto}
 .tools h2{margin:6px 0 0;font-size:13px;font-weight:600;color:var(--muted)}
 .tools hr{width:100%;border:0;border-top:1px solid var(--line);margin:6px 0}
 .tools p{margin:0;font-size:12.5px;line-height:1.5;color:var(--muted)}
 .box{position:relative;flex:1;min-width:0}
 .wrap{position:absolute;inset:0;overflow:auto}
-.stage{position:relative;width:100%;height:100%;background:var(--paper)}
+.stage{position:relative;background:var(--paper)}
 svg{display:block}
 #ed{display:none;position:absolute;z-index:3;height:32px;font:600 16px "Bricolage Grotesque",system-ui,sans-serif;text-align:center;color:#1E2A38;background:#fff;border:2px solid var(--accent);border-radius:6px;padding:0 6px}
-@media (max-width:700px){
+.bar{position:absolute;top:10px;left:10px;z-index:4;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 10px;background:var(--bar);border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.14);max-width:calc(100% - 20px);font-size:13px;color:var(--ink)}
+.bar[hidden]{display:none}
+.bar span{color:var(--muted)}
+.bar button{padding:5px 10px;font-size:13px}
+.bar select,.bar input[type=text],.bar input:not([type]){font:inherit;font-size:13px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:4px 6px}
+.bar input:not([type]){width:110px}
+.bar label{display:flex;align-items:center;gap:4px}
+.sw{width:22px;height:22px;padding:0!important;border-radius:50%;border:2px solid var(--line)}
+.sw.on{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+@media (max-width:760px){
  .app{flex-direction:column}
  .tools{width:auto;flex-direction:row;overflow-x:auto;overflow-y:hidden;border-right:0;border-bottom:1px solid var(--line);padding:8px}
  .tools h2,.tools p,.tools hr{display:none}
@@ -42,6 +55,8 @@ svg{display:block}
 <header>
   <h1>Akış Çizer</h1>
   <span id="msg" role="status" aria-live="polite"></span>
+  <div class="grp"><button id="bUn" title="Geri al (Ctrl+Z)">↶ Geri al</button><button id="bRe" title="İleri al (Ctrl+Y)">↷ İleri al</button></div>
+  <div class="grp"><button id="zm" aria-label="Uzaklaştır">−</button><button id="zl" title="Yakınlaştırmayı sıfırla">100%</button><button id="zp" aria-label="Yakınlaştır">+</button></div>
   <button id="bPng" class="main">PNG indir</button>
   <button id="bSvg">SVG indir</button>
 </header>
@@ -54,19 +69,21 @@ svg{display:block}
     <button data-add="io"><svg width="28" height="18" viewBox="0 0 28 18"><polygon points="6,2 27,2 22,16 1,16" fill="#C9C4F0" stroke="#1E2A38" stroke-width="1.5"/></svg>Giriş / Çıkış</button>
     <button data-add="txt"><svg width="28" height="18" viewBox="0 0 28 18"><text x="14" y="15" text-anchor="middle" font-size="16" font-weight="700" font-family="Arial,sans-serif" style="fill:var(--ink)">T</text></svg>Metin</button>
     <hr>
-    <button id="bDel">Seçileni sil</button>
     <button id="bClr">Hepsini temizle</button>
     <hr>
-    <p>Bir şekil seçiliyken yeni şekil eklersen otomatik bağlanır.</p>
-    <p>Metin: şekilsiz, serbest yazı ekler (not, açıklama). Çift tıkla: yazıyı değiştir. Mavi noktayı başka şekle sürükle: bağlantı kur.</p>
+    <p>Şekli seçince kenarlarında mavi noktalar çıkar. Bir noktayı başka şekle sürükle: ok o noktadan çıkar, bırakınca en yakın kenara girer.</p>
+    <p>Seçili okun uçlarındaki noktaları sürükleyerek yönünü değiştirebilirsin. Üstteki çubuktan çıkış/giriş yönünü, etiketi ve rengi ayarlarsın.</p>
+    <p>Çift tıkla: yazıyı düzenle. Ctrl+Z geri al, Ctrl+D çoğalt, ok tuşları taşır.</p>
   </nav>
   <div class="box">
+    <div class="bar" id="bar" hidden></div>
     <div class="wrap" id="wrap">
       <div class="stage" id="stage">
         <svg id="c" font-family="Bricolage Grotesque, Arial, sans-serif">
           <defs>
             <pattern id="gp" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" style="stroke:var(--grid)" stroke-width="1"/></pattern>
             <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 1L10 5L0 9z" style="fill:var(--edge)"/></marker>
+            <marker id="arrS" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 1L10 5L0 9z" fill="#2F6FED"/></marker>
           </defs>
           <rect data-ui="1" width="100%" height="100%" fill="url(#gp)"/>
           <g id="gE"></g><g id="gN"></g><g id="gT"></g>
@@ -78,10 +95,10 @@ svg{display:block}
 </div>
 <script>
 (function(){
-const NS='http://www.w3.org/2000/svg';
-const $=id=>document.getElementById(id);
-const svg=$('c'),wrap=$('wrap'),ed=$('ed'),gE=$('gE'),gN=$('gN'),gT=$('gT');
+const NS='http://www.w3.org/2000/svg',$=id=>document.getElementById(id);
+const svg=$('c'),wrap=$('wrap'),stage=$('stage'),ed=$('ed'),gE=$('gE'),gN=$('gN'),gT=$('gT'),bar=$('bar');
 const INK='#1E2A38',ACC='#2F6FED';
+const COLS=['#FFFFFF','#9ED8CF','#F6D77A','#C9C4F0','#F4A9A0','#A9D3F5','#B5E0A8'];
 const T={
   start:{w:150,h:56,fill:'#9ED8CF',text:'Başla'},
   proc:{w:164,h:64,fill:'#FFFFFF',text:'İşlem'},
@@ -89,38 +106,83 @@ const T={
   io:{w:176,h:64,fill:'#C9C4F0',text:'Veri gir'},
   txt:{w:180,h:40,fill:'none',text:'Metin'}
 };
-let S={n:[],e:[]},sel=null,uid=1,editing=null,drag=null,conn=null,last={t:0,k:'',id:0};
+const DIR={t:[0,-1],r:[1,0],b:[0,1],l:[-1,0]},SIDES={t:'Üst',r:'Sağ',b:'Alt',l:'Sol'};
+let S={n:[],e:[]},sel=null,uid=1,editing=null,drag=null,conn=null,last={t:0,k:'',id:0},z=1,hist=[],hi=-1,barSig='@';
+const nd=id=>S.n.find(n=>n.id===id);
+const snap=v=>Math.round(v/10)*10;
+function auto(a,b){const dx=b.x-a.x,dy=b.y-a.y;return Math.abs(dy)>=Math.abs(dx)?(dy>=0?['b','t']:['t','b']):(dx>=0?['r','l']:['l','r'])}
 let stored=null;
 try{stored=localStorage.getItem('akis-v1')}catch(_){}
-if(stored){try{S=JSON.parse(stored);uid=Math.max(0,...S.n.map(x=>x.id),...S.e.map(x=>x.id))+1}catch(_){S={n:[],e:[]}}}
+if(stored){try{S=JSON.parse(stored)}catch(_){S={n:[],e:[]}}}
 else{
   const N=(t,x,y,text)=>({id:uid++,t,x,y,w:T[t].w,h:T[t].h,text});
   const a=N('start',400,80,'Başla'),b=N('io',400,190,'Bir sayı gir'),c=N('dec',400,320,'Sayı çift mi?'),
-        d=N('proc',640,440,"Ekrana 'Çift' yaz"),e=N('proc',400,440,"Ekrana 'Tek' yaz"),f=N('start',520,590,'Bitir');
+        d=N('proc',680,440,"Ekrana 'Çift' yaz"),e=N('proc',400,440,"Ekrana 'Tek' yaz"),f=N('start',540,590,'Bitir');
   S.n=[a,b,c,d,e,f];
-  const E=(p,q,l)=>({id:uid++,a:p.id,b:q.id,l:l||''});
-  S.e=[E(a,b),E(b,c),E(c,d,'Evet'),E(c,e,'Hayır'),E(d,f),E(e,f)];
+  const E=(p,q,sa,ta,l)=>({id:uid++,a:p.id,b:q.id,sa,ta,l:l||''});
+  S.e=[E(a,b,'b','t'),E(b,c,'b','t'),E(c,d,'r','t','Evet'),E(c,e,'b','t','Hayır'),E(d,f,'b','t'),E(e,f,'b','t')];
 }
-const nd=id=>S.n.find(n=>n.id===id);
-const snap=v=>Math.round(v/10)*10;
+S.e.forEach(e=>{if(!e.sa||!e.ta){const a=nd(e.a),b=nd(e.b);if(a&&b)[e.sa,e.ta]=auto(a,b);else{e.sa='b';e.ta='t'}}});
+uid=Math.max(uid,...S.n.map(x=>x.id+1),...S.e.map(x=>x.id+1),1);
+hist=[JSON.stringify(S)];hi=0;
+
 function save(){try{localStorage.setItem('akis-v1',JSON.stringify(S))}catch(_){}}
+function updUR(){$('bUn').disabled=hi<=0;$('bRe').disabled=hi>=hist.length-1}
+function commitS(){
+  save();const j=JSON.stringify(S);
+  if(j!==hist[hi]){hist=hist.slice(0,hi+1);hist.push(j);if(hist.length>100)hist.shift();hi=hist.length-1}
+  updUR();
+}
+function undo(){if(hi>0){hi--;S=JSON.parse(hist[hi]);sel=null;render();save();updUR()}}
+function redo(){if(hi<hist.length-1){hi++;S=JSON.parse(hist[hi]);sel=null;render();save();updUR()}}
 function el(t,a,p){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e}
 function say(m){const s=$('msg');s.textContent=m;clearTimeout(say.t);say.t=setTimeout(()=>s.textContent='',3500)}
 
-function geo(a,b){
-  const dx=b.x-a.x,dy=b.y-a.y;
-  if(Math.abs(dy)>=Math.abs(dx)){
-    const s=dy>=0?1:-1,x1=a.x,y1=a.y+s*a.h/2,x2=b.x,y2=b.y-s*b.h/2,m=(y1+y2)/2;
-    return{d:`M${x1} ${y1}V${m}H${x2}V${y2}`,lx:x1+(dx>=0?14:-14),ly:y1+s*18,la:dx>=0?'start':'end'};
+const port=(n,s)=>[n.x+DIR[s][0]*n.w/2,n.y+DIR[s][1]*n.h/2];
+function nearest(n,p){let best='t',bd=1e9;for(const s in DIR){const q=port(n,s),dd=Math.hypot(q[0]-p.x,q[1]-p.y);if(dd<bd){bd=dd;best=s}}return best}
+function simplify(P){
+  const o=[];
+  P.forEach(p=>{const l=o[o.length-1];if(!l||l[0]!==p[0]||l[1]!==p[1])o.push(p)});
+  const r=[o[0]];
+  for(let i=1;i<o.length-1;i++){
+    const a=r[r.length-1],b=o[i],c=o[i+1];
+    if((a[0]===b[0]&&b[0]===c[0])||(a[1]===b[1]&&b[1]===c[1]))continue;
+    r.push(b);
   }
-  const s=dx>=0?1:-1,x1=a.x+s*a.w/2,y1=a.y,x2=b.x-s*b.w/2,y2=b.y,m=(x1+x2)/2;
-  return{d:`M${x1} ${y1}H${m}V${y2}H${x2}`,lx:x1+s*24,ly:y1-8,la:'middle'};
+  r.push(o[o.length-1]);return r;
 }
+function route(a,sa,b,ta){
+  const p1=port(a,sa),p2=port(b,ta),d1=DIR[sa],d2=DIR[ta],K=28;
+  const s1=[p1[0]+d1[0]*K,p1[1]+d1[1]*K],s2=[p2[0]+d2[0]*K,p2[1]+d2[1]*K];
+  const v1=d1[1]!==0,v2=d2[1]!==0;let mid;
+  if(v1&&v2){
+    const m=(d1[1]*d2[1]<0&&(s2[1]-s1[1])*d1[1]>0)?(s1[1]+s2[1])/2:(d1[1]>0?Math.max(s1[1],s2[1]):Math.min(s1[1],s2[1]));
+    mid=[[s1[0],m],[s2[0],m]];
+  }else if(!v1&&!v2){
+    const m=(d1[0]*d2[0]<0&&(s2[0]-s1[0])*d1[0]>0)?(s1[0]+s2[0])/2:(d1[0]>0?Math.max(s1[0],s2[0]):Math.min(s1[0],s2[0]));
+    mid=[[m,s1[1]],[m,s2[1]]];
+  }else if(v1)mid=[[s1[0],s2[1]]];
+  else mid=[[s2[0],s1[1]]];
+  return simplify([p1,s1,...mid,s2,p2]);
+}
+function rpath(P,r){
+  let d=`M${P[0][0]} ${P[0][1]}`;
+  for(let i=1;i<P.length-1;i++){
+    const a=P[i-1],b=P[i],c=P[i+1],l1=Math.hypot(b[0]-a[0],b[1]-a[1]),l2=Math.hypot(c[0]-b[0],c[1]-b[1]),rr=Math.min(r,l1/2,l2/2);
+    d+=`L${b[0]-(b[0]-a[0])/l1*rr} ${b[1]-(b[1]-a[1])/l1*rr}Q${b[0]} ${b[1]} ${b[0]+(c[0]-b[0])/l2*rr} ${b[1]+(c[1]-b[1])/l2*rr}`;
+  }
+  const e=P[P.length-1];return d+`L${e[0]} ${e[1]}`;
+}
+function lblPos(P,sa){
+  const p=P[0],d=DIR[sa];
+  return d[1]!==0?{x:p[0]+8,y:p[1]+d[1]*18,a:'start'}:{x:p[0]+d[0]*22,y:p[1]-8,a:'middle'};
+}
+
 function wrapT(s,m){const out=[];let c='';for(const w of s.split(/\s+/)){if(c&&(c+' '+w).length>m){out.push(c);c=w}else c=c?c+' '+w:w}if(c)out.push(c);return out.length?out:['']}
 function shape(n,g,on){
   const{x,y,w,h}=n;
   if(n.t==='txt')return el('rect',{x:x-w/2,y:y-h/2,width:w,height:h,rx:6,fill:'transparent',stroke:on?ACC:'none','stroke-width':2,'stroke-dasharray':'6 4'},g);
-  const a={fill:T[n.t].fill,stroke:on?ACC:INK,'stroke-width':on?3:1.8,'stroke-linejoin':'round'};
+  const a={fill:n.c||T[n.t].fill,stroke:on?ACC:INK,'stroke-width':on?3:1.8,'stroke-linejoin':'round'};
   if(n.t==='start')return el('rect',{...a,x:x-w/2,y:y-h/2,width:w,height:h,rx:h/2},g);
   if(n.t==='proc')return el('rect',{...a,x:x-w/2,y:y-h/2,width:w,height:h,rx:4},g);
   if(n.t==='dec')return el('polygon',{...a,points:`${x},${y-h/2} ${x+w/2},${y} ${x},${y+h/2} ${x-w/2},${y}`},g);
@@ -128,19 +190,20 @@ function shape(n,g,on){
 }
 function fit(){
   const mx=S.n.reduce((m,n)=>Math.max(m,n.x+n.w/2),0),my=S.n.reduce((m,n)=>Math.max(m,n.y+n.h/2),0);
-  const W=Math.max(wrap.clientWidth,mx+300),H=Math.max(wrap.clientHeight,my+300);
-  $('stage').style.width=W+'px';$('stage').style.height=H+'px';
-  svg.setAttribute('width',W);svg.setAttribute('height',H);
+  const W=Math.max(wrap.clientWidth/z,mx+300),H=Math.max(wrap.clientHeight/z,my+300);
+  stage.style.width=W*z+'px';stage.style.height=H*z+'px';
+  svg.setAttribute('width',W*z);svg.setAttribute('height',H*z);svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
 }
-window.addEventListener('resize',fit);
 function render(){
   gE.innerHTML='';gN.innerHTML='';
+  let selEdge=null;
   S.e.forEach(e=>{
     const a=nd(e.a),b=nd(e.b);if(!a||!b)return;
-    const g=geo(a,b),on=sel&&sel.k==='e'&&sel.id===e.id;
-    el('path',{d:g.d,fill:'none',stroke:'transparent','stroke-width':16,'data-k':'e','data-id':e.id,style:'cursor:pointer'},gE);
-    el('path',{d:g.d,fill:'none','stroke-width':on?3:1.8,'marker-end':'url(#arr)',style:'pointer-events:none;stroke:'+(on?ACC:'var(--edge)')},gE);
-    if(e.l){const t=el('text',{x:g.lx,y:g.ly,'text-anchor':g.la,'font-size':13,'font-weight':600,style:'pointer-events:none;fill:var(--edge);paint-order:stroke;stroke:var(--paper);stroke-width:5px'},gE);t.textContent=e.l}
+    const P=route(a,e.sa,b,e.ta),d=rpath(P,10),on=sel&&sel.k==='e'&&sel.id===e.id;
+    if(on)selEdge={P};
+    el('path',{d,fill:'none',stroke:'transparent','stroke-width':16,'data-k':'e','data-id':e.id,style:'cursor:pointer'},gE);
+    el('path',{d,fill:'none','stroke-width':on?3:1.8,'stroke-linejoin':'round','marker-end':on?'url(#arrS)':'url(#arr)',style:'pointer-events:none;stroke:'+(on?ACC:'var(--edge)')+(e.dash?';stroke-dasharray:7 5':'')},gE);
+    if(e.l){const L=lblPos(P,e.sa),t=el('text',{x:L.x,y:L.y,'text-anchor':L.a,'font-size':13,'font-weight':600,style:'pointer-events:none;fill:var(--edge);paint-order:stroke;stroke:var(--paper);stroke-width:5px'},gE);t.textContent=e.l}
   });
   S.n.forEach(n=>{
     const on=sel&&sel.k==='n'&&sel.id===n.id;
@@ -150,22 +213,53 @@ function render(){
     const tx=el('text',{'text-anchor':'middle','font-size':n.t==='txt'?15:14,'font-weight':600,fill:INK,style:'pointer-events:none'+(n.t==='txt'?';fill:var(--edge)':'')},g);
     lines.forEach((l,i)=>{const s=el('tspan',{x:n.x,y:n.y+(i-(lines.length-1)/2)*17+5},tx);s.textContent=l});
     if(on&&n.t!=='txt'){
-      [[n.x,n.y-n.h/2],[n.x+n.w/2,n.y],[n.x,n.y+n.h/2],[n.x-n.w/2,n.y]].forEach(p=>{
-        el('circle',{cx:p[0],cy:p[1],r:8,fill:ACC,stroke:'#fff','stroke-width':2,'data-k':'h','data-id':n.id,'data-ui':1,style:'cursor:crosshair;touch-action:none'},gN);
-      });
+      for(const s in DIR){const p=port(n,s);
+        el('circle',{cx:p[0],cy:p[1],r:8,fill:ACC,stroke:'#fff','stroke-width':2,'data-k':'h','data-id':n.id,'data-side':s,'data-ui':1,style:'cursor:crosshair;touch-action:none'},gN);}
     }
   });
-  fit();
+  if(selEdge){
+    [['a',selEdge.P[0]],['b',selEdge.P[selEdge.P.length-1]]].forEach(([end,p])=>
+      el('circle',{cx:p[0],cy:p[1],r:7,fill:'#fff',stroke:ACC,'stroke-width':3,'data-k':'ep','data-id':sel.id,'data-end':end,'data-ui':1,style:'cursor:crosshair;touch-action:none'},gN));
+  }
+  fit();updBar();
 }
-function pt(e){const r=svg.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
 
+function mk(tag,props,parent,txt){const e=document.createElement(tag);Object.assign(e,props||{});if(txt!=null)e.textContent=txt;if(parent)parent.appendChild(e);return e}
+function updBar(){
+  let o=null,sig='';
+  if(sel){o=sel.k==='n'?nd(sel.id):S.e.find(x=>x.id===sel.id);if(!o)sel=null;else sig=sel.k+sel.id+(sel.k==='e'?o.sa+o.ta+(o.dash?1:0):(o.c||''))}
+  if(sig===barSig)return;barSig=sig;
+  bar.innerHTML='';bar.hidden=!o;if(!o)return;
+  if(sel.k==='n'){
+    if(o.t!=='txt'){
+      mk('span',{},bar,'Renk');
+      COLS.forEach(c=>{const on=(o.c||T[o.t].fill).toLowerCase()===c.toLowerCase();const b=mk('button',{className:'sw'+(on?' on':''),title:'Renk '+c},bar);b.style.background=c;b.onclick=()=>{o.c=c;render();commitS()}});
+    }
+    mk('button',{onclick:dup},bar,'Çoğalt');
+  }else{
+    ['sa','ta'].forEach((f,i)=>{
+      mk('span',{},bar,i?'Giriş yönü':'Çıkış yönü');
+      const s=mk('select',{},bar);
+      for(const k in SIDES){const op=mk('option',{value:k},s,SIDES[k]);if(o[f]===k)op.selected=true}
+      s.onchange=()=>{o[f]=s.value;render();commitS()};
+    });
+    mk('span',{},bar,'Etiket');
+    const inp=mk('input',{value:o.l||'',maxLength:40},bar);inp.oninput=()=>{o.l=inp.value;render()};inp.onchange=commitS;
+    const lb=mk('label',{},bar),cb=mk('input',{type:'checkbox',checked:!!o.dash},lb);lb.append(' Kesikli');
+    cb.onchange=()=>{o.dash=cb.checked;render();commitS()};
+  }
+  mk('button',{onclick:del},bar,'Sil');
+}
+
+function pt(e){const r=svg.getBoundingClientRect();return{x:(e.clientX-r.left)/z,y:(e.clientY-r.top)/z}}
 svg.addEventListener('mousedown',e=>e.preventDefault());
 svg.addEventListener('pointerdown',e=>{
   if(editing)commit();
   const t=e.target.closest('[data-k]');
   if(!t){sel=null;render();return}
   const k=t.dataset.k,id=+t.dataset.id,p=pt(e);
-  if(k==='h'){conn={a:id};svg.setPointerCapture(e.pointerId);return}
+  if(k==='h'){conn={a:id,side:t.dataset.side};svg.setPointerCapture(e.pointerId);return}
+  if(k==='ep'){conn={ed:id,end:t.dataset.end};svg.setPointerCapture(e.pointerId);return}
   const now=Date.now();
   if(now-last.t<350&&last.k===k&&last.id===id){last.t=0;sel={k,id};render();setTimeout(()=>edit(k,id),0);return}
   last={t:now,k,id};
@@ -173,6 +267,10 @@ svg.addEventListener('pointerdown',e=>{
   if(k==='n'){const n=nd(id);drag={id,dx:p.x-n.x,dy:p.y-n.y,moved:false};svg.setPointerCapture(e.pointerId)}
   render();
 });
+function connFrom(){
+  if(conn.ed){const e=S.e.find(x=>x.id===conn.ed);return conn.end==='b'?port(nd(e.a),e.sa):port(nd(e.b),e.ta)}
+  return port(nd(conn.a),conn.side);
+}
 svg.addEventListener('pointermove',e=>{
   const p=pt(e);
   if(drag){
@@ -183,36 +281,49 @@ svg.addEventListener('pointermove',e=>{
     if(e.clientX>r.right-50)wrap.scrollLeft+=25;else if(e.clientX<r.left+50)wrap.scrollLeft-=25;
     if(e.clientY>r.bottom-50)wrap.scrollTop+=25;else if(e.clientY<r.top+50)wrap.scrollTop-=25;
   }else if(conn){
-    const a=nd(conn.a);gT.innerHTML='';
-    el('line',{x1:a.x,y1:a.y,x2:p.x,y2:p.y,stroke:ACC,'stroke-width':2.5,'stroke-dasharray':'6 5','data-ui':1,style:'pointer-events:none'},gT);
+    gT.innerHTML='';
+    const f=connFrom();
+    el('line',{x1:f[0],y1:f[1],x2:p.x,y2:p.y,stroke:ACC,'stroke-width':2.5,'stroke-dasharray':'6 5','data-ui':1,style:'pointer-events:none'},gT);
+    const o=document.elementFromPoint(e.clientX,e.clientY),tg=o&&o.closest&&o.closest('[data-k="n"]');
+    if(tg){
+      const n=nd(+tg.dataset.id),nr=nearest(n,p);
+      for(const s in DIR){const q=port(n,s);
+        el('circle',{cx:q[0],cy:q[1],r:s===nr?10:5,fill:s===nr?ACC:'#fff',stroke:ACC,'stroke-width':2,'data-ui':1,style:'pointer-events:none'},gT);}
+    }
   }
 });
 function release(e){
   if(conn){
     gT.innerHTML='';
-    const el2=document.elementFromPoint(e.clientX,e.clientY),tg=el2&&el2.closest&&el2.closest('[data-k="n"]');
+    const o=document.elementFromPoint(e.clientX,e.clientY),tg=o&&o.closest&&o.closest('[data-k="n"]');
     if(tg){
-      const b=+tg.dataset.id;
-      if(b!==conn.a&&!S.e.some(x=>x.a===conn.a&&x.b===b)){
+      const id=+tg.dataset.id,n=nd(id),side=nearest(n,pt(e));
+      if(conn.ed){
+        const ex=S.e.find(x=>x.id===conn.ed);
+        if(ex){
+          if(conn.end==='b'&&id!==ex.a){ex.b=id;ex.ta=side;commitS()}
+          else if(conn.end==='a'&&id!==ex.b){ex.a=id;ex.sa=side;commitS()}
+        }
+      }else if(id!==conn.a&&!S.e.some(x=>x.a===conn.a&&x.b===id)){
         const src=nd(conn.a),k=S.e.filter(x=>x.a===conn.a).length;
-        const ne={id:uid++,a:conn.a,b,l:src.t==='dec'?(['Evet','Hayır'][k]||''):''};
-        S.e.push(ne);sel={k:'e',id:ne.id};save();
+        const ne={id:uid++,a:conn.a,b:id,sa:conn.side,ta:side,l:src.t==='dec'?(['Evet','Hayır'][k]||''):''};
+        S.e.push(ne);sel={k:'e',id:ne.id};commitS();
       }
     }
     conn=null;render();
   }
-  if(drag){if(drag.moved)save();drag=null}
+  if(drag){if(drag.moved)commitS();drag=null}
 }
 svg.addEventListener('pointerup',release);
 svg.addEventListener('pointercancel',release);
 
 function edit(k,id){
   const o=k==='n'?nd(id):S.e.find(e=>e.id===id);if(!o)return;
-  let x,y,w;
-  if(k==='n'){x=o.x;y=o.y;w=Math.max(130,o.w-20)}
-  else{const g=geo(nd(o.a),nd(o.b));x=g.lx+(g.la==='start'?40:g.la==='end'?-40:0);y=g.ly;w=96}
-  editing={k,id};ed.value=k==='n'?o.text:o.l;
-  Object.assign(ed.style,{display:'block',left:(x-w/2)+'px',top:(y-16)+'px',width:w+'px'});
+  let cx,cy,w;
+  if(k==='n'){cx=o.x*z;cy=o.y*z;w=Math.max(130,(o.w-20)*z)}
+  else{const L=lblPos(route(nd(o.a),o.sa,nd(o.b),o.ta),o.sa);cx=(L.x+(L.a==='start'?40:0))*z;cy=L.y*z;w=96}
+  editing={k,id};ed.value=k==='n'?o.text:(o.l||'');
+  Object.assign(ed.style,{display:'block',left:(cx-w/2)+'px',top:(cy-16)+'px',width:w+'px'});
   ed.focus();ed.select();
 }
 function commit(){
@@ -220,29 +331,34 @@ function commit(){
   const{k,id}=editing;editing=null;ed.style.display='none';
   const v=ed.value.trim().slice(0,60);
   if(k==='n'){const n=nd(id);if(n)n.text=v}else{const e=S.e.find(x=>x.id===id);if(e)e.l=v}
-  render();save();
+  render();commitS();
 }
 ed.addEventListener('keydown',e=>{
-  if(e.key==='Enter'){commit()}
+  if(e.key==='Enter')commit();
   else if(e.key==='Escape'){editing=null;ed.style.display='none';render()}
 });
 ed.addEventListener('blur',commit);
 
 function add(t){
-  const d=T[t];let x,y,from=null,k=0;
-  if(t!=='txt'&&sel&&sel.k==='n'&&nd(sel.id)){
-    from=nd(sel.id);k=S.e.filter(e=>e.a===from.id).length;
-    x=from.x+k*220;y=from.y+from.h/2+70+d.h/2;
+  const d=T[t];let x,y,from=null,sa,ta,k=0;
+  const cur=sel&&sel.k==='n'?nd(sel.id):null;
+  if(t!=='txt'&&cur&&cur.t!=='txt'){
+    from=cur;k=S.e.filter(e=>e.a===from.id).length;
+    const row=(d.h+40);
+    if(k===0){sa='b';ta='t';x=from.x;y=from.y+from.h/2+70+d.h/2}
+    else if(k%2===1){sa='r';ta='l';x=from.x+from.w/2+90+d.w/2;y=from.y+((k-1)>>1)*row}
+    else{sa='l';ta='r';x=from.x-from.w/2-90-d.w/2;y=from.y+((k-2)>>1)*row}
   }else{
     const o=(S.n.length%6)*20;
-    x=wrap.scrollLeft+wrap.clientWidth/2+o;y=wrap.scrollTop+110+o;
+    x=(wrap.scrollLeft+wrap.clientWidth/2)/z+o;y=(wrap.scrollTop+110)/z+o;
   }
-  x=Math.max(d.w/2+10,snap(x));y=snap(y);
+  x=Math.max(d.w/2+10,snap(x));y=Math.max(d.h/2+10,snap(y));
   const n={id:uid++,t,x,y,w:d.w,h:d.h,text:d.text};S.n.push(n);
-  if(from)S.e.push({id:uid++,a:from.id,b:n.id,l:from.t==='dec'?(['Evet','Hayır'][k]||''):''});
-  sel={k:'n',id:n.id};render();save();
+  if(from)S.e.push({id:uid++,a:from.id,b:n.id,sa,ta,l:from.t==='dec'?(['Evet','Hayır'][k]||''):''});
+  sel={k:'n',id:n.id};render();commitS();
   const vx=wrap.scrollLeft,vy=wrap.scrollTop;
-  if(y+d.h>vy+wrap.clientHeight||y-d.h<vy||x+d.w>vx+wrap.clientWidth)wrap.scrollTo({left:Math.max(0,x-wrap.clientWidth/2),top:Math.max(0,y-wrap.clientHeight/2),behavior:'smooth'});
+  if(y*z+d.h*z>vy+wrap.clientHeight||y*z-d.h*z<vy||x*z+d.w*z>vx+wrap.clientWidth||x*z-d.w*z<vx)
+    wrap.scrollTo({left:Math.max(0,x*z-wrap.clientWidth/2),top:Math.max(0,y*z-wrap.clientHeight/2),behavior:'smooth'});
 }
 document.querySelectorAll('[data-add]').forEach(b=>b.addEventListener('click',()=>add(b.dataset.add)));
 
@@ -250,19 +366,44 @@ function del(){
   if(!sel)return;
   if(sel.k==='n'){S.n=S.n.filter(n=>n.id!==sel.id);S.e=S.e.filter(e=>e.a!==sel.id&&e.b!==sel.id)}
   else S.e=S.e.filter(e=>e.id!==sel.id);
-  sel=null;render();save();
+  sel=null;render();commitS();
 }
-$('bDel').addEventListener('click',()=>{if(sel)del();else say('Önce silmek istediğin şekle ya da oka tıkla.')});
+function dup(){
+  if(!sel||sel.k!=='n')return;
+  const n=nd(sel.id),c={...n,id:uid++,x:n.x+30,y:n.y+30};
+  S.n.push(c);sel={k:'n',id:c.id};render();commitS();
+}
 document.addEventListener('keydown',e=>{
-  if(editing)return;
-  if((e.key==='Delete'||e.key==='Backspace')&&sel){e.preventDefault();del()}
-  if(e.key==='Escape'){sel=null;render()}
+  if(editing||/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))return;
+  const m=e.ctrlKey||e.metaKey,k=e.key.toLowerCase();
+  if(m&&k==='z'){e.preventDefault();e.shiftKey?redo():undo();return}
+  if(m&&k==='y'){e.preventDefault();redo();return}
+  if(m&&k==='d'){e.preventDefault();dup();return}
+  if((e.key==='Delete'||e.key==='Backspace')&&sel){e.preventDefault();del();return}
+  if(e.key==='Escape'){sel=null;render();return}
+  if(sel&&sel.k==='n'&&e.key.startsWith('Arrow')){
+    e.preventDefault();const n=nd(sel.id);
+    if(e.key==='ArrowLeft')n.x=Math.max(n.w/2+10,n.x-10);
+    if(e.key==='ArrowRight')n.x+=10;
+    if(e.key==='ArrowUp')n.y=Math.max(n.h/2+10,n.y-10);
+    if(e.key==='ArrowDown')n.y+=10;
+    render();commitS();
+  }
 });
+$('bUn').addEventListener('click',undo);
+$('bRe').addEventListener('click',redo);
 let clr=0;
 $('bClr').addEventListener('click',function(){
   if(!clr){this.textContent='Emin misin? Tekrar tıkla';clr=setTimeout(()=>{clr=0;this.textContent='Hepsini temizle'},3000);return}
-  clearTimeout(clr);clr=0;this.textContent='Hepsini temizle';S={n:[],e:[]};sel=null;render();save();
+  clearTimeout(clr);clr=0;this.textContent='Hepsini temizle';S={n:[],e:[]};sel=null;render();commitS();
 });
+
+function setZ(v){z=Math.min(2,Math.max(.4,Math.round(v*10)/10));$('zl').textContent=Math.round(z*100)+'%';render()}
+$('zm').addEventListener('click',()=>setZ(z-.1));
+$('zp').addEventListener('click',()=>setZ(z+.1));
+$('zl').addEventListener('click',()=>setZ(1));
+wrap.addEventListener('wheel',e=>{if(e.ctrlKey||e.metaKey){e.preventDefault();setZ(z+(e.deltaY<0?.1:-.1))}},{passive:false});
+window.addEventListener('resize',fit);
 
 function grab(){
   if(!S.n.length){say('Önce birkaç şekil ekle.');return null}
@@ -296,7 +437,7 @@ $('bPng').addEventListener('click',()=>{
   img.onerror=()=>say('PNG oluşturulamadı. SVG olarak indirmeyi dene.');
   img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(g.xml);
 });
-render();
+render();updUR();
 })();
 </script>
 </body>
